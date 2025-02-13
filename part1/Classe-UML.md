@@ -1,8 +1,7 @@
----
-title: H'BNB
----
 classDiagram
-direction LR
+    direction LR
+
+    
     class User {
         +String firstName
         +String lastName
@@ -47,5 +46,5 @@ direction LR
     Place "1" --> "*" Amenity : has
 
     %% Appliquer les styles
-    classDef customStyle fill:#424242,stroke:#E3100C,color:#E3100C
-    class User,Place,Review,Amenity customStyle
+    classDef customStyle fill:#424242,stroke:#E3100C,color:#E3100C;
+
