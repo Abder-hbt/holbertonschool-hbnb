@@ -1,7 +1,5 @@
+```mermaid
 classDiagram
-    direction LR
-
-    
     class User {
         +String firstName
         +String lastName
@@ -39,12 +37,7 @@ classDiagram
         +delete()
         +list()
     }
-
-    User "1" --> "*" Place : owns
-    User "1" --> "*" Review : writes
-    Place "1" --> "*" Review : receives
-    Place "1" --> "*" Amenity : has
-
-    %% Appliquer les styles
-    classDef customStyle fill:#424242,stroke:#E3100C,color:#E3100C;
-
+    User "1" -- "*" Place : owns
+    User "1" -- "*" Review : writes
+    Place "1" -- "*" Review : receives
+    Place "*" -- "*" Amenity : has
