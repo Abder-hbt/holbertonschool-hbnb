@@ -1,56 +1,51 @@
-```mermaid
 ---
-config:
-  theme: neo-dark
-  look: classic
 title: H'BNB
 ---
 classDiagram
 direction LR
     class User {
-	    +String firstName
-	    +String lastName
-	    +String email
-	    +String password
-	    +Boolean isAdmin
-	    +register()
-	    +updateProfile()
-	    +delete()
+        +String firstName
+        +String lastName
+        +String email
+        +String password
+        +Boolean isAdmin
+        +register()
+        +updateProfile()
+        +delete()
     }
     class Place {
-	    +String title
-	    +String description
-	    +Float price
-	    +Float latitude
-	    +Float longitude
-	    +create()
-	    +update()
-	    +delete()
-	    +list()
+        +String title
+        +String description
+        +Float price
+        +Float latitude
+        +Float longitude
+        +create()
+        +update()
+        +delete()
+        +list()
     }
     class Review {
-	    +Int rating
-	    +String comment
-	    +create()
-	    +update()
-	    +delete()
-	    +listByPlace()
+        +Int rating
+        +String comment
+        +create()
+        +update()
+        +delete()
+        +listByPlace()
     }
     class Amenity {
-	    +String name
-	    +String description
-	    +create()
-	    +update()
-	    +delete()
-	    +list()
+        +String name
+        +String description
+        +create()
+        +update()
+        +delete()
+        +list()
     }
 
-    User "1" --|> "*" Place : owns
-    User "1" --|> "*" Review : writes
-    Place "1" --|> "*" Review : receives
-    Place "1" --|> "*" Amenity : has
+    User "1" --> "*" Place : owns
+    User "1" --> "*" Review : writes
+    Place "1" --> "*" Review : receives
+    Place "1" --> "*" Amenity : has
 
-	style User fill:#424242,stroke:#E3100C,color:#E3100C
-	style Place fill:#424242,stroke:#E3100C,color:#E3100C
-	style Review fill:#424242,stroke:#E3100C,color:#E3100C
-	style Amenity fill:#424242,stroke:#E3100C,color:#E3100C
+    %% Appliquer les styles
+    classDef customStyle fill:#424242,stroke:#E3100C,color:#E3100C
+    class User,Place,Review,Amenity customStyle
