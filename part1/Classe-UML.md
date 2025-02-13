@@ -1,5 +1,7 @@
 ```mermaid
+
 classDiagram
+direction LR
     class User {
         +String firstName
         +String lastName
@@ -41,3 +43,8 @@ classDiagram
     User "1" -- "*" Review : writes
     Place "1" -- "*" Review : receives
     Place "*" -- "*" Amenity : has
+
+	style User fill:#424242,stroke:#E3100C,color:#E3100C
+	style Place fill:#424242,stroke:#E3100C,color:#E3100C
+	style Review fill:#424242,stroke:#E3100C,color:#E3100C
+	style Amenity fill:#424242,stroke:#E3100C,color:#E3100C
