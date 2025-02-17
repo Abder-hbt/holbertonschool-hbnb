@@ -1,0 +1,62 @@
+sequenceDiagram
+    autonumber
+    participant Client
+    participant API_Layer
+    participant Facade
+    participant Models
+    participant Database
+
+    %% User Registration
+    rect rgb(216, 191, 216)
+    Client->>API_Layer: POST /api/users (email, password, name)
+    API_Layer->>Facade: create_user(email, password, name)
+    Facade->>Models: User(email, password, name)
+    Models->>Database: save(new_user)
+    Database-->>Models: success
+    Models-->>Facade: user_object
+    Facade-->>API_Layer: user_object
+    API_Layer-->>Client: 201 Created (user_data)
+    end
+
+    %% Place Creation
+    rect rgb(173, 216, 230)
+    Client->>API_Layer: POST /api/places (name, description, price, location)
+    API_Layer->>Facade: verify_user_auth()
+    Facade-->>API_Layer: auth_ok
+    API_Layer->>Facade: create_place(data)
+    Facade->>Models: Place(name, description, price, location)
+    Models->>Database: save(new_place)
+    Database-->>Models: success
+    Models-->>Facade: place_object
+    Facade-->>API_Layer: place_object
+    API_Layer-->>Client: 201 Created (place_data)
+    end
+
+    %% Review Submission
+    rect rgb(144, 238, 144)
+    Client->>API_Layer: POST /api/places/{id}/reviews (content, rating)
+    API_Layer->>Facade: verify_user_auth()
+    Facade-->>API_Layer: auth_ok
+    API_Layer->>Facade: get_place(place_id)
+    Facade->>Database: query(place_id)
+    Database-->>Facade: place_data
+    Facade-->>API_Layer: place_object
+    API_Layer->>Facade: create_review(place_id, content, rating)
+    Facade->>Models: Review(place_id, content, rating)
+    Models->>Database: save(new_review)
+    Database-->>Models: success
+    Models-->>Facade: review_object
+    Facade-->>API_Layer: review_object
+    API_Layer-->>Client: 201 Created (review_data)
+    end
+
+    %% Fetching Places List
+    rect rgb(255, 182, 193)
+    Client->>API_Layer: GET /api/places?filters
+    API_Layer->>Facade: get_places(filters)
+    Facade->>Database: query(filters)
+    Database-->>Facade: places_data
+    Facade->>Facade: build_places_list(places_data)
+    Facade-->>API_Layer: places_list
+    API_Layer-->>Client: 200 OK (places_list)
+    end
