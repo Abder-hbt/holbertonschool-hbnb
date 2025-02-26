@@ -14,4 +14,4 @@ Objet :
 
 from app.services.facade import HBnBFacade
 
-facade = HBnBFacade()  """ Crée une instance de la facade HBnB """
+facade = HBnBFacade()   #Crée une instance de la facade HBnB
