@@ -1,5 +1,10 @@
 # H'BNB Technical Documentation – Overview of HBnB
 
+## 🔗 Links profile 
+[![GITHUB](https://img.shields.io/badge/github_Abder-hbt?style=for-the-badge&logo=github-fi&logoColor=white)](https://github.com/Abder-hbt)
+[![GITHUB](https://img.shields.io/badge/github_Kadiga6-0A66C2?style=for-the-badge&logo=GITHUB&logoColor=white)](https://github.com/Kadiga6)
+[![GITHUB](https://img.shields.io/badge/github_Yacine-213-1DA1F2?style=for-the-badge&logo=GITHUB&logoColor=white)](https://github.com/Yacine-213)
+
 ## H'BNB Overview
 
 H'BNB is a web application inspired by Airbnb, designed to allow users to manage property rentals online. This technical documentation details the system's architecture, design, and key components.
