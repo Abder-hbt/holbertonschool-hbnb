@@ -30,8 +30,7 @@
 # - valide_longitude(longitude) : Valide et corrige la longitude dans les limites acceptables.
 
 import requests
-from models.base_model import BaseModel
-from models.user import User
+from app.models.base_model import BaseModel
 
 class Place(BaseModel):
     # Représente un lieu dans l'application
@@ -63,6 +62,7 @@ class Place(BaseModel):
         return price
     
     def is_owner(self, owner):
+        from app.models.user import User
         # Valide que le propriétaire est une instance de User
         if not isinstance(owner, User):
             raise ValueError("Le propriétaire doit être une instance de User")

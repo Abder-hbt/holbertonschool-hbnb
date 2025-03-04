@@ -19,7 +19,7 @@
 # - valide_email(email) : Valide le format de l'email, vérifie son unicité, et lève une exception si l'email est invalide ou déjà utilisé.
 
 import re
-from models.base_model import BaseModel
+from  app.models.base_model import BaseModel
 
 class User(BaseModel):
     # Représente un utilisateur de l'application
@@ -33,6 +33,7 @@ class User(BaseModel):
         self.last_name = self.valide_name(last_name)  # Valide et assigne le nom de famille 
         self.email = self.valide_email(email)  # Valide et assigne l'email 
         self.is_admin = is_admin  # Indique si l'utilisateur est un administrateur 
+        self.places = [] 
 
     def valide_name(self, name):
         # Valide que le nom ne dépasse pas 50 caractères
@@ -48,3 +49,9 @@ class User(BaseModel):
             raise ValueError("Cet Email est déjà utilisé")
         User.used_emails.add(email)  # Ajoute l'email à l'ensemble des emails utilisés 
         return email
+
+    def add_place(self, place):
+        from app.models.place import Place
+        if not isinstance(place, Place):
+            raise ValueError("L'objet doit être une instance de la classe Place")
+        self.places.append(place)  # Ajoute le lieu à la liste des lieux

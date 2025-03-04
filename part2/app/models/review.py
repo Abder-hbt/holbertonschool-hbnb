@@ -23,10 +23,10 @@
 # - update_review(new_text, new_rating) : Met à jour le texte et/ou la note de l'avis 
 #   et enregistre la date de mise à jour.
 
-from models.base_model import BaseModel
-from models.user import User
-from models.place import Place
+from app.models.base_model import BaseModel
 import datetime
+
+from typing import TYPE_CHECKING
 
 class Review(BaseModel):
     # Représente un avis sur un lieu
@@ -53,13 +53,15 @@ class Review(BaseModel):
         return rating
     
     def correct_place(self, place):
-        # Valide que le lieu est une instance de Place
+        # Fait le lien entre l'entités Review et Place 
+        from models.place import Place
         if not isinstance(place, Place):
             raise ValueError("Le lieu doit être une instance de Place")
         return place
     
     def is_user(self, user):
-        # Valide que l'utilisateur est une instance de User
+        # Fait le lien entre l'entités Review et User
+        from models.user import User
         if not isinstance(user, User):
             raise ValueError("L'utilisateur doit être une instance de User")
         return user
