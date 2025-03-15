@@ -6,8 +6,8 @@
 # - Review : Classe représentant un avis sur un lieu.
 # - Amenity : Classe représentant une commodité associée à un lieu.
 
-from models.base_model import BaseModel
-from models.user import User
-from models.place import Place
-from models.review import Review
-from models.amenity import Amenity
+from app.models.base_model import BaseModel
+from app.models.user import User
+from app.models.place import Place
+from app.models.review import Review
+from app.models.amenity import Amenity

@@ -6,11 +6,12 @@ facade = HBnBFacade()
 
 def validate_place_data(data):
     """Validate the place data."""
-    required_fields = ['title', 'price', 'latitude', 'longitude', 'owner_id', 'amenities']
+    required_fields = ['title', 'price', 'address', 'owner_id', 'amenities']  # Enlève latitude et longitude
     for field in required_fields:
         if field not in data or data[field] is None:
             return False
     return True
+
 
 api = Namespace('places', description='Place operations')
 
@@ -21,21 +22,18 @@ amenity_model = api.model('PlaceAmenity', {
 
 user_model = api.model('PlaceUser', {
     'id': fields.String(description='User ID'),
-    'first_name': fields.String(description='First name of the owner'),
-    'last_name': fields.String(description='Last name of the owner'),
-    'email': fields.String(description='Email of the owner')
+    'first_name': fields.String(description='First name of the owner')
 })
 
 place_model = api.model('Place', {
     'title': fields.String(required=True, description='Title of the place'),
     'description': fields.String(description='Description of the place'),
     'price': fields.Float(required=True, description='Price per night'),
-    'address': fields.String(required=True, description='Address of the place'),  # Address field
+    'address': fields.String(required=True, description='Address of the place'),  # L'adresse reste obligatoire
     'owner_id': fields.String(required=True, description='ID of the owner'),
-    'amenities': fields.List(fields.String, required=True, description="List of amenities ID's"),
-    'latitude': fields.Float(required=True, description='Latitude of the place'),
-    'longitude': fields.Float(required=True, description='Longitude of the place')
+    'amenities': fields.List(fields.String, required=True, description="List of amenities ID's")
 })
+
 
 @api.route('/')
 class PlaceList(Resource):
@@ -52,7 +50,7 @@ class PlaceList(Resource):
             return {'error': 'Invalid input data', 'details': place_data}, 400
         
         try:
-            new_place = facade.create_place(place_data)
+            new_place = facade.create_place(place_data)  # La création de la place s'occupe de la géocodification
         except ValueError as e:
             return {'error': str(e)}, 400
         except Exception as e:

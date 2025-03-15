@@ -1,23 +1,3 @@
-# Définition de la classe User
-
-# Ce module définit la classe `User`, qui représente un utilisateur de l'application. 
-# Elle hérite de `BaseModel` et inclut des validations pour les attributs de l'utilisateur.
-
-# Classes :
-# - User : Représente un utilisateur avec des attributs et des validations.
-
-# Attributs :
-# - used_emails : Ensemble pour stocker les emails utilisés, afin d'éviter les doublons.
-# - first_name : Prénom de l'utilisateur, validé à une longueur maximale de 50 caractères.
-# - last_name : Nom de famille de l'utilisateur, validé à une longueur maximale de 50 caractères.
-# - email : Adresse email de l'utilisateur, validée pour respecter un format correct et l'unicité.
-# - is_admin : Indicateur si l'utilisateur est un administrateur (valeur par défaut : False).
-
-# Méthodes :
-# - __init__(first_name, last_name, email, is_admin=False) : Constructeur qui initialise les attributs de l'utilisateur.
-# - valide_name(name) : Valide que le nom n'excède pas 50 caractères et lève une exception si c'est le cas.
-# - valide_email(email) : Valide le format de l'email, vérifie son unicité, et lève une exception si l'email est invalide ou déjà utilisé.
-
 import re
 from  app.models.base_model import BaseModel
 
@@ -49,9 +29,3 @@ class User(BaseModel):
             raise ValueError("Cet Email est déjà utilisé")
         User.used_emails.add(email)  # Ajoute l'email à l'ensemble des emails utilisés 
         return email
-
-    def add_place(self, place):
-        from app.models.place import Place
-        if not isinstance(place, Place):
-            raise ValueError("L'objet doit être une instance de la classe Place")
-        self.places.append(place)  # Ajoute le lieu à la liste des lieux

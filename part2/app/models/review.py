@@ -1,28 +1,3 @@
-# Définition de la classe Review
-
-# Ce module définit la classe `Review`, qui représente un avis sur un lieu dans l'application.
-# Elle hérite de `BaseModel` et inclut des validations pour les attributs de l'avis.
-
-# Classes :
-# - Review : Représente un avis avec des attributs tels que le texte, la note, 
-#   le lieu et l'utilisateur, ainsi que des méthodes pour la validation et la mise à jour.
-
-# Attributs :
-# - text : Contenu de l'avis, validé pour ne pas être vide.
-# - rating : Note de l'avis, validée pour être comprise entre 1 et 5.
-# - place : Lieu associé à l'avis, validé pour être une instance de `Place`.
-# - user : Utilisateur ayant laissé l'avis, validé pour être une instance de `User`.
-
-# Méthodes :
-# - __init__(text, rating, place, user) : Constructeur qui initialise les attributs de l'avis
-#   et effectue des validations.
-# - valide_text(text) : Valide que le texte de l'avis n'est pas vide.
-# - valide_rating(rating) : Valide que la note est comprise entre 1 et 5.
-# - correct_place(place) : Valide que le lieu est une instance de `Place`.
-# - is_user(user) : Valide que l'utilisateur est une instance de `User`.
-# - update_review(new_text, new_rating) : Met à jour le texte et/ou la note de l'avis 
-#   et enregistre la date de mise à jour.
-
 from app.models.base_model import BaseModel
 import datetime
 

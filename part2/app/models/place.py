@@ -1,104 +1,77 @@
-# Définition de la classe Place
-
-# Ce module définit la classe `Place`, qui représente un lieu dans l'application.
-# Elle hérite de `BaseModel` et inclut des validations pour les attributs du lieu 
-# ainsi que la géocodification de l'adresse fournie.
-
-# Classes :
-# - Place : Représente un lieu avec des attributs tels que le titre, la description, 
-#   le prix, l'adresse et le propriétaire, ainsi que des validations et des méthodes 
-#   pour la géocodification.
-
-# Attributs :
-# - title : Titre du lieu, validé à une longueur maximale de 100 caractères.
-# - description : Description du lieu.
-# - price : Prix du lieu, validé pour être supérieur ou égal à 0.
-# - address : Adresse du lieu, utilisée pour la géocodification.
-# - owner : Propriétaire du lieu, validé pour être une instance de `User`.
-# - latitude : Latitude du lieu, obtenue par géocodification de l'adresse.
-# - longitude : Longitude du lieu, obtenue par géocodification de l'adresse.
-
-# Méthodes :
-# - __init__(title, description, price, address, owner) : Constructeur qui initialise
-#   les attributs du lieu et effectue des validations.
-# - valide_title(title) : Valide que le titre n'excède pas 100 caractères.
-# - valide_price(price) : Valide que le prix est supérieur ou égal à 0.
-# - is_owner(owner) : Valide que le propriétaire est une instance de `User`.
-# - geocode_address(address) : Obtient la latitude et la longitude de l'adresse
-#   en effectuant une requête à l'API de géocodage.
-# - valide_latitude(latitude) : Valide et corrige la latitude dans les limites acceptables.
-# - valide_longitude(longitude) : Valide et corrige la longitude dans les limites acceptables.
-
 import requests
 from app.models.base_model import BaseModel
+from app.models.user import User
 
 class Place(BaseModel):
-    # Représente un lieu dans l'application
+    """Représente un lieu dans l'application."""
 
-    def __init__(self, title, description, price, address, owner):
-        # Initialise un nouvel objet Place avec des validations
-        super().__init__()  # Appelle le constructeur de la classe parente
-        self.title = self.valide_title(title)  # Valide et assigne le titre
-        self.description = description  # Assigne la description
-        self.price = self.valide_price(price)  # Valide et assigne le prix
-        self.address = address  # Assigne l'adresse
-        self.owner = self.is_owner(owner)  # Valide et assigne le propriétaire
+    def __init__(self, title: str, description: str, price: float, address: str, owner: User):
+        """Initialise un nouvel objet Place avec des validations et du géocodage."""
+        super().__init__()
+        self.title = self.validate_title(title)
+        self.description = description
+        self.price = self.validate_price(price)
+        self.address = address
+        self.owner = owner
 
-        # Effectue la géocodification de l'adresse pour obtenir la latitude et la longitude
-        self.latitude, self.longitude = self.geocode_address(address)
-        self.latitude = self.valide_latitude(self.latitude)  # Valide la latitude
-        self.longitude = self.valide_longitude(self.longitude)  # Valide la longitude
+        # Géocodage de l'adresse
+        try:
+            self.latitude, self.longitude = self.geocode_address(address)
+        except Exception as e:
+            print(f"⚠️ Géocodage échoué : {e}")
+            self.latitude, self.longitude = 0.0, 0.0  # Valeurs par défaut
 
-    def valide_title(self, title):
-        # Valide que le titre ne dépasse pas 100 caractères
-        if len(title) > 100:
-            raise ValueError("Seulement 100 caractères sont autorisés")
-        return title
+        self.latitude = self.validate_latitude(self.latitude)
+        self.longitude = self.validate_longitude(self.longitude)
 
-    def valide_price(self, price):
-        # Valide que le prix est supérieur ou égal à 0
-        if float(price) < 0:
-            raise ValueError("Veuillez saisir une valeur égale ou supérieure à 0")
+    def validate_title(self, title: str) -> str:
+        """Valide que le titre ne dépasse pas 100 caractères."""
+        if len(title.strip()) > 100:
+            raise ValueError("Le titre ne peut pas dépasser 100 caractères.")
+        return title.strip()
+
+    def validate_price(self, price: float) -> float:
+        """Valide que le prix est un nombre positif."""
+        price = float(price)
+        if price < 0:
+            raise ValueError("Le prix doit être supérieur ou égal à 0.")
         return price
-    
-    def is_owner(self, owner):
-        from app.models.user import User
-        # Valide que le propriétaire est une instance de User
+
+    #def validate_owner(self, owner: User) -> User:
+        """Valide que le propriétaire est bien une instance de User."""
         if not isinstance(owner, User):
-            raise ValueError("Le propriétaire doit être une instance de User")
+            raise ValueError("Le propriétaire doit être une instance de User.")
         return owner
 
-    def geocode_address(self, address):
-        # Effectue une requête pour obtenir les coordonnées de l'adresse
-        url = "https://nominatim.openstreetmap.org/search"
-        params = {
-            "q": address,
-            "format": "json"
-        }
-        response = requests.get(url, params=params)
+    def geocode_address(self, address: str) -> tuple[float, float]:
+        """Utilise l'API Nominatim pour obtenir la latitude et la longitude d'une adresse."""
+        try:
+            response = requests.get(
+                "https://nominatim.openstreetmap.org/search",
+                params={"q": address, "format": "json"},
+                headers={"User-Agent": "hbnb-app"}
+            )
+            response.raise_for_status()  # Lève une erreur si le statut HTTP n'est pas 200
 
-        # Vérifie la réponse et retourne la latitude et la longitude
-        if response.status_code == 200:
             data = response.json()
-            if data:
-                latitude = float(data[0]["lat"])
-                longitude = float(data[0]["lon"])
-                return latitude, longitude
-            else:
-                raise ValueError("Aucune coordonnée trouvée pour l'adresse donnée")
-        else:
-            raise ValueError("Erreur lors de la requête à Nominatim")
+            if not data:
+                raise ValueError(f"Aucune donnée trouvée pour l'adresse : {address}")
 
-    def valide_latitude(self, latitude):
-        # Valide et corrige la latitude
-        corrected_latitude = max(-90, min(90, float(latitude)))
-        if corrected_latitude != float(latitude):
-            print("Attention : La latitude saisie était hors limites", corrected_latitude)
-        return corrected_latitude
+            return float(data[0]["lat"]), float(data[0]["lon"])
+        
+        except requests.RequestException as e:
+            raise RuntimeError(f"Erreur de connexion à l'API de géocodage : {e}")
 
-    def valide_longitude(self, longitude):
-        # Valide et corrige la longitude
-        corrected_longitude = max(-180, min(180, float(longitude)))
-        if corrected_longitude != float(longitude):
-            print("Attention : La longitude saisie était hors limites", corrected_longitude)
-        return corrected_longitude
+    def validate_latitude(self, latitude: float) -> float:
+        """Valide et corrige la latitude si nécessaire."""
+        latitude = float(latitude)
+        if latitude < -90 or latitude > 90:
+            raise ValueError(f"Latitude invalide : {latitude}. Elle doit être entre -90 et 90.")
+        return latitude
+
+    def validate_longitude(self, longitude: float) -> float:
+        """Valide et corrige la longitude si nécessaire."""
+        longitude = float(longitude)
+        if longitude < -180 or longitude > 180:
+            raise ValueError(f"Longitude invalide : {longitude}. Elle doit être entre -180 et 180.")
+        return longitude
