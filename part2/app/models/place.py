@@ -5,14 +5,15 @@ from app.models.user import User
 class Place(BaseModel):
     """Représente un lieu dans l'application."""
 
-    def __init__(self, title: str, description: str, price: float, address: str, owner: User):
+    def __init__(self, title: str, description: str, price: float, address: str, owner: User, amenities: str):
         """Initialise un nouvel objet Place avec des validations et du géocodage."""
         super().__init__()
         self.title = self.validate_title(title)
         self.description = description
         self.price = self.validate_price(price)
         self.address = address
-        self.owner = owner
+        self.owner = self.validate_owner(owner)
+        self.amenities = amenities
 
         # Géocodage de l'adresse
         try:
@@ -37,7 +38,7 @@ class Place(BaseModel):
             raise ValueError("Le prix doit être supérieur ou égal à 0.")
         return price
 
-    #def validate_owner(self, owner: User) -> User:
+    def validate_owner(self, owner):
         """Valide que le propriétaire est bien une instance de User."""
         if not isinstance(owner, User):
             raise ValueError("Le propriétaire doit être une instance de User.")

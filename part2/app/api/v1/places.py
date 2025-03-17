@@ -3,17 +3,8 @@ from flask import request
 from app.services.facade import HBnBFacade
 
 facade = HBnBFacade()
-
-def validate_place_data(data):
-    """Validate the place data."""
-    required_fields = ['title', 'price', 'address', 'owner_id', 'amenities']  # Enlève latitude et longitude
-    for field in required_fields:
-        if field not in data or data[field] is None:
-            return False
-    return True
-
-
 api = Namespace('places', description='Place operations')
+
 
 amenity_model = api.model('PlaceAmenity', {
     'id': fields.String(description='Amenity ID'),
@@ -22,7 +13,9 @@ amenity_model = api.model('PlaceAmenity', {
 
 user_model = api.model('PlaceUser', {
     'id': fields.String(description='User ID'),
-    'first_name': fields.String(description='First name of the owner')
+    'first_name': fields.String(description='First name of the owner'),
+    'last_name': fields.String(description='Last name of the owner'),
+    'email': fields.String(description='Email of the owner')
 })
 
 place_model = api.model('Place', {
@@ -43,37 +36,70 @@ class PlaceList(Resource):
     def post(self):
         """Register a new place"""
         place_data = api.payload
-        if not place_data:
-            return {'error': 'No data received'}, 400
 
-        if not validate_place_data(place_data):
-            return {'error': 'Invalid input data', 'details': place_data}, 400
-        
-        try:
-            new_place = facade.create_place(place_data)  # La création de la place s'occupe de la géocodification
-        except ValueError as e:
-            return {'error': str(e)}, 400
-        except Exception as e:
-            return {'error': 'Unexpected error', 'details': str(e)}, 500
-        
-        return {'message': 'Place successfully created', 'id': new_place.id}, 201
+        # Récupérer l'objet User à partir de owner_id
+        owner_id = place_data['owner_id']
+        print(f"ID de l'utilisateur à récupérer : {owner_id}")
+        owner = facade.get_user(owner_id)  # Récupère l'objet User
 
+        if not owner:
+            return {'error': 'Owner not found'}, 404
+
+        # Créer une instance de Place avec l'objet User
+        new_place = facade.create_place(place_data)  # Appelle create_place avec place_data uniquement
+
+        return {
+            'title': new_place.title,
+            'id': new_place.id,
+            'description': new_place.description,
+            'price': new_place.price,
+            'address': new_place.address,
+            'latitude': new_place.latitude,
+            'longitude': new_place.longitude,
+            'amenities': new_place.amenities,
+            "owner_id": new_place.owner.id  # Assure-toi que owner est un objet User
+        }, 201
+    
     @api.response(200, 'List of places retrieved successfully')
     def get(self):
-        """Retrieve a list of all places"""
-        data = facade.get_all_places()
-        return [{'id': place.id, 'latitude': place.latitude, 'longitude': place.longitude, 'owner_id': place.owner.id, 'amenities': place.amenities} for place in data], 200
+        places = facade.get_all_places()        
+        return [{
+            'id': place['id'],
+            'title': place['title'],
+            'description': place['description'],
+            'price': place['price'],
+            'address': place['address'],
+            'latitude': place['latitude'],
+            'longitude': place['longitude'],
+            'owner_id': place['owner']['id'],  # Accède à l'ID de l'owner
+            'amenities': place['amenities']
+
+        }for place in places], 200
+
 
 @api.route('/<place_id>')
 class PlaceResource(Resource):
     @api.response(200, 'Place details retrieved successfully')
     @api.response(404, 'Place not found')
     def get(self, place_id):
-        """Get place details by ID"""
-        place = facade.get_place_by_id(place_id)
-        if not place:
-            return {'error': 'Place not found'}, 404
-        return place, 200
+        place = facade.get_place(place_id)  # Récupère l'objet Place
+
+        if place is None:
+            return {"error": "Place not found"}, 404
+
+        # Assure-toi que 'place' est un objet et non un dictionnaire
+        return {
+            'id': place['id'],
+            'title': place['title'],
+            'description': place['description'],
+            'price': place['price'],
+            'address': place['address'],
+            'latitude': place['latitude'],
+            'longitude': place['longitude'],
+            'owner_id': place['owner']['id'],  # Accède à l'ID de l'owner
+            'amenities': place['amenities']
+
+        }, 200
 
     @api.expect(place_model)
     @api.response(200, 'Place updated successfully')
@@ -81,24 +107,29 @@ class PlaceResource(Resource):
     @api.response(400, 'Invalid input data')
     def put(self, place_id):
         """Update a place's information"""
-        data = request.json
-        place = facade.get_place_by_id(place_id)
+        data = api.payload
+
+        # Mettre à jour l'objet Place
+        place = facade.update_place(place_id, data)
 
         if place is None:
-            return {'error': 'Place not found'}, 404
-        if not validate_place_data(data):
-            return {'error': 'Invalid input data'}, 400
-        
-        updated_place = facade.update_place(place_id, data)
-        return {'message': 'Place updated successfully'}, 200
+            return {"error": "Place not found"}, 404
 
-    @api.response(200, 'Place deleted successfully')
-    @api.response(404, 'Place not found')
-    def delete(self, place_id):
-        """Delete a place by ID"""
-        place = facade.get_place(place_id)
-        if not place:
-            return {'error': 'Place not found'}, 404
-        
-        facade.delete_place(place_id)
-        return {'message': 'Place successfully deleted'}, 200
+        # Convertir l'objet Place en dictionnaire pour la sérialisation JSON
+        place_data = {
+            'id': place.id,
+            'title': place.title,
+            'description': place.description,
+            'price': place.price,
+            'address': place.address,
+            'latitude': place.latitude,
+            'longitude': place.longitude,
+            'owner': {
+                'id': place.owner.id,
+                'first_name': place.owner.first_name,
+                'last_name': place.owner.last_name
+            },
+            'amenities': place.amenities
+        }
+
+        return place_data, 200

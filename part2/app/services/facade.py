@@ -5,21 +5,40 @@ from app.models.place import Place
 from app.models.review import Review
 
 class HBnBFacade:
-    def __init__(self):
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(HBnBFacade, cls).__new__(cls, *args, **kwargs)
+        return cls._instance
+
+    def __init__(self, ):
         # Initialisation des repositories
-        self.user_repo = InMemoryRepository()
-        self.place_repo = InMemoryRepository()
-        self.review_repo = InMemoryRepository()
-        self.amenity_repo = InMemoryRepository()
+        if not hasattr(self, 'initialized'):
+            # Initialisation des dépôts distincts
+            self.user_repo = InMemoryRepository()
+            self.place_repo = InMemoryRepository()
+            self.review_repo = InMemoryRepository()
+            self.amenity_repo = InMemoryRepository()
+            self.initialized = True
+            print("Nouvelle instance de HBnBFacade créée.")
 
     # User
     def create_user(self, user_data):
         user = User(**user_data)
         self.user_repo.add(user)
+        print(f"Utilisateur ajouté : {user.id}, {user.first_name} {user.last_name}")
         return user
 
     def get_user(self, user_id):
-        return self.user_repo.get(user_id)
+        print(f"Recherche de l'utilisateur avec l'ID : {user_id}")
+        user = self.user_repo.get(user_id)
+        if user is None:
+            # Vérifie les utilisateurs dans le dépôt pour déboguer
+            all_users = self.user_repo.get_all()
+            print("Utilisateurs dans le dépôt :", [u.id for u in all_users])
+            raise ValueError(f"Objet avec l'ID {user_id} non trouvé.")
+        return user
     
     def get_user_by_email(self, email):
         return self.user_repo.get_by_attribute('email', email)
@@ -57,49 +76,90 @@ class HBnBFacade:
 
 
     # Place
-    def create_place(self, data):
-        # Assure-toi que l'utilisateur avec owner_id existe
-        owner_id = data.get("owner_id")
-        owner = self.user_repo.get(owner_id)  # Utilisation de self.user_repo ici
-        
-        if not owner:
-            raise ValueError(f"Utilisateur avec l'ID {owner_id} non trouvé.")
-        
-        # Ensuite, crée la place
+    def create_place(self, place_data):
+        # Récupérer l'objet User à partir de l'ID
+        owner_id = place_data['owner_id']
+        owner = self.get_user(owner_id)  # Utilise get_user pour accéder à user_repo
+
+        # Vérification et log
+        if not isinstance(owner, User):
+            print(f"Type de owner: {type(owner)}")  # Ajoute un log pour vérifier le type
+            raise ValueError("Le propriétaire doit être une instance de User.")
+
+        print(f"Propriétaire récupéré: {owner.id}, {owner.first_name} {owner.last_name}")
+
+        # Créer une instance de Place avec l'objet User
         place = Place(
-            title=data['title'],
-            description=data.get('description', ''),  # Utilisation d'une valeur par défaut pour la description
-            price=data['price'],
-            address=data['address'],
-            owner=owner,
-            amenities=data['amenities']
+            title=place_data['title'],
+            description=place_data['description'],
+            price=place_data['price'],
+            address=place_data['address'],
+            owner=owner,  # Passe l'objet User ici
+            amenities=place_data['amenities']
         )
-        
-        # Ajout de la place dans le repository des places
+        # Sauvegarder le lieu dans le dépôt des lieux
         self.place_repo.add(place)
-        
         return place
 
     def get_place(self, place_id):
-        return self.place_repo.get(place_id)
+        print(f"Recherche de la place avec l'ID : {place_id}")
+        place = self.place_repo.get(place_id)
+        if place is None:
+            # Vérifie les places dans le dépôt pour déboguer
+            all_places = self.place_repo.get_all()
+            print("Places dans le dépôt :", [p.id for p in all_places])
+            raise ValueError(f"Objet avec l'ID {place_id} non trouvé.")
+
+        # Convertir l'objet Place en dictionnaire pour la sérialisation JSON
+        place_data = {
+            "id": place.id,
+            "title": place.title,
+            "description": place.description,
+            "price": place.price,
+            "address": place.address,
+            "latitude": place.latitude,
+            "longitude": place.longitude,
+            "owner": {
+                "id": place.owner.id,
+                "first_name": place.owner.first_name,
+                "last_name": place.owner.last_name
+            },
+            "amenities": place.amenities
+        }
+        return place_data
 
     def get_all_places(self):
-        return self.place_repo.get_all()
+        places = self.place_repo.get_all()  # Récupère la liste de tous les lieux
+        place_data_list = []
+
+        for place in places:
+            place_data = {
+                "id": place.id,
+                "title": place.title,
+                "description": place.description,
+                "price": place.price,
+                "address": place.address,
+                "latitude": place.latitude,
+                "longitude": place.longitude,
+                "owner": {
+                    "id": place.owner.id,
+                    "first_name": place.owner.first_name,
+                    "last_name": place.owner.last_name
+                },
+                "amenities": place.amenities
+            }
+            place_data_list.append(place_data)
+
+        return place_data_list
 
     def update_place(self, place_id, place_data):
-        place = self.get_place(place_id)
+        place = self.place_repo.get(place_id)
         if not place:
             return None
-        for key, value in place_data.items():
-            setattr(place, key, value)
-        return place
+        updated_place_data = {key: value for key, value in place_data.items()}
+        self.place_repo.update(place.id, updated_place_data)
+        return self.place_repo.get(place.id)
 
-    def delete_place(self, place_id):
-        place = self.get_place(place_id)
-        if not place:
-            return False
-        self.place_repo.delete(place_id)
-        return True
 
     # Review
     def create_review(self, review_data):
