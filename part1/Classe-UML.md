@@ -3,6 +3,7 @@
 classDiagram
 direction LR
     class User {
+	+UUID4 ID
         +String firstName
         +String lastName
         +String email
@@ -13,6 +14,7 @@ direction LR
         +delete()
     }
     class Place {
+	+UUID4 ID
         +String title
         +String description
         +Float price
@@ -24,6 +26,7 @@ direction LR
         +list()
     }
     class Review {
+	+UUID4 ID
         +Int rating
         +String comment
         +create()
@@ -32,6 +35,7 @@ direction LR
         +listByPlace()
     }
     class Amenity {
+	+UUID4 ID
         +String name
         +String description
         +create()
