@@ -62,19 +62,32 @@ class PlaceList(Resource):
     
     @api.response(200, 'List of places retrieved successfully')
     def get(self):
-        places = facade.get_all_places()        
-        return [{
-            'id': place['id'],
-            'title': place['title'],
-            'description': place['description'],
-            'price': place['price'],
-            'address': place['address'],
-            'latitude': place['latitude'],
-            'longitude': place['longitude'],
-            'owner_id': place['owner']['id'],  # Accède à l'ID de l'owner
-            'amenities': place['amenities']
+        print(f"Recherche de la place avec l'ID : {place}")
+        place = self.place_repo.get(place)
+        if place is None:
+            # Vérifie les places dans le dépôt pour déboguer
+            all_places = self.place_repo.get_all()
+            print("Places dans le dépôt :", [p.id for p in all_places])
+            raise ValueError(f"Objet avec l'ID {place} non trouvé.")
 
-        }for place in places], 200
+        # Convertir l'objet Place en dictionnaire pour la sérialisation JSON
+        place_data = {
+            "id": place.id,
+            "title": place.title,
+            "description": place.description,
+            "price": place.price,
+            "address": place.address,
+            "latitude": place.latitude,
+            "longitude": place.longitude,
+            "owner": {
+                "id": place.owner.id,
+                "first_name": place.owner.first_name,
+                "last_name": place.owner.last_name
+            },
+            "amenities": place.amenities,
+            "reviews": [{"id": r.id, "text": r.text, "rating": r.rating, "user_id": r.user.id} for r in place.reviews]
+        }
+        return place_data
 
 
 @api.route('/<place_id>')
@@ -97,8 +110,8 @@ class PlaceResource(Resource):
             'latitude': place['latitude'],
             'longitude': place['longitude'],
             'owner_id': place['owner']['id'],  # Accède à l'ID de l'owner
-            'amenities': place['amenities']
-
+            'amenities': place['amenities'],
+            'reviews': place['reviews']
         }, 200
 
     @api.expect(place_model)

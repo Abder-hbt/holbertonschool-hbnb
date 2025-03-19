@@ -40,6 +40,11 @@ class HBnBFacade:
             raise ValueError(f"Objet avec l'ID {user_id} non trouvé.")
         return user
     
+    def get_all_users(self):
+        """Retrieve all users from the repository"""
+        users = self.user_repo.get_all()
+        return users
+    
     def get_user_by_email(self, email):
         return self.user_repo.get_by_attribute('email', email)
 
@@ -117,14 +122,15 @@ class HBnBFacade:
             "description": place.description,
             "price": place.price,
             "address": place.address,
-            "latitude": place.latitude,
-            "longitude": place.longitude,
+            "latitude": getattr(place, 'latitude', None),  # Utilise getattr pour éviter les erreurs si l'attribut n'existe pas
+            "longitude": getattr(place, 'longitude', None),  # Utilise getattr pour éviter les erreurs si l'attribut n'existe pas
             "owner": {
                 "id": place.owner.id,
                 "first_name": place.owner.first_name,
                 "last_name": place.owner.last_name
             },
-            "amenities": place.amenities
+            "amenities": place.amenities,
+            "reviews": [{"id": r.id, "text": r.text, "rating": r.rating, "user_id": r.user.id} for r in place.reviews]
         }
         return place_data
 
@@ -159,11 +165,46 @@ class HBnBFacade:
         updated_place_data = {key: value for key, value in place_data.items()}
         self.place_repo.update(place.id, updated_place_data)
         return self.place_repo.get(place.id)
+    
+    def get_place_object(self, place_id):
+        print(f"Recherche de la place avec l'ID : {place_id}")
+        place = self.place_repo.get(place_id)
+        if place is None:
+            # Vérifie les places dans le dépôt pour déboguer
+            all_places = self.place_repo.get_all()
+            print("Places dans le dépôt :", [p.id for p in all_places])
+            raise ValueError(f"Objet avec l'ID {place_id} non trouvé.")
+        return place  # Retourne l'objet Place
+
 
 
     # Review
     def create_review(self, review_data):
-        review = Review(**review_data)
+        user_id = review_data['user_id']
+        user = self.get_user(user_id)
+
+        place_id = review_data['place_id']
+        place = self.get_place_object(place_id)  # Utilise get_place_object pour obtenir un objet Place
+
+        if not isinstance(user, User):
+            print(f"Type de user: {type(user)}")
+            raise ValueError("L'utilisateur doit être une instance de User.")
+
+        print(f"User récupéré: {user.id}, {user.first_name} {user.last_name}")
+
+        if not isinstance(place, Place):
+            print(f"Type de place: {type(place)}")
+            raise ValueError("Le lieu doit être une instance de Place.")
+
+        print(f"Place récupéré: {place.id}, {place.address}")
+
+        review = Review(
+            text=review_data['text'],
+            rating=review_data['rating'],
+            user=user,
+            place=place
+        )
+
         self.review_repo.add(review)
         return review
 
@@ -174,15 +215,23 @@ class HBnBFacade:
         return self.review_repo.get_all()
 
     def get_reviews_by_place(self, place_id):
-        return [review for review in self.get_all_reviews() if review.place_id == place_id]
+        # Récupérer toutes les reviews
+        all_reviews = self.get_all_reviews()
+
+        # Filtrer les reviews par l'ID du lieu
+        return [review for review in all_reviews if review.place.id == place_id]
 
     def update_review(self, review_id, review_data):
-        review = self.get_review(review_id)
+        review = self.review_repo.get(review_id)
         if not review:
-            return None
+            raise ValueError("Review non trouvé.")
+
+        # Mettre à jour les attributs de la review avec les nouvelles données
         for key, value in review_data.items():
             setattr(review, key, value)
-        self.review_repo.update(review)
+
+        # Appeler la méthode update du dépôt avec l'ID et les données mises à jour
+        self.review_repo.update(review, review_data)
         return review
 
     def delete_review(self, review_id):

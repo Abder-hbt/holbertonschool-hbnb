@@ -27,19 +27,19 @@ class Review(BaseModel):
             raise ValueError("La note doit être comprise entre 1 et 5")
         return rating
     
-    def correct_place(self, place):
+    def correct_place(self, place_id):
         # Fait le lien entre l'entités Review et Place 
-        from models.place import Place
-        if not isinstance(place, Place):
+        from app.models.place import Place
+        if not isinstance(place_id, Place):
             raise ValueError("Le lieu doit être une instance de Place")
-        return place
+        return place_id
     
-    def is_user(self, user):
+    def is_user(self, user_id):
         # Fait le lien entre l'entités Review et User
-        from models.user import User
-        if not isinstance(user, User):
+        from app.models.user import User
+        if not isinstance(user_id, User):
             raise ValueError("L'utilisateur doit être une instance de User")
-        return user
+        return user_id
 
     def update_review(self, new_text=None, new_rating=None):
         # Met à jour le texte et/ou la note de l'avis

@@ -14,6 +14,7 @@ class Place(BaseModel):
         self.address = address
         self.owner = self.validate_owner(owner)
         self.amenities = amenities
+        self.reviews = []
 
         # Géocodage de l'adresse
         try:
@@ -43,6 +44,10 @@ class Place(BaseModel):
         if not isinstance(owner, User):
             raise ValueError("Le propriétaire doit être une instance de User.")
         return owner
+    
+    def add_review(self, review):
+        """Ajoute une review à la liste des reviews du lieu."""
+        self.reviews.append(review)
 
     def geocode_address(self, address: str) -> tuple[float, float]:
         """Utilise l'API Nominatim pour obtenir la latitude et la longitude d'une adresse."""
@@ -76,3 +81,4 @@ class Place(BaseModel):
         if longitude < -180 or longitude > 180:
             raise ValueError(f"Longitude invalide : {longitude}. Elle doit être entre -180 et 180.")
         return longitude
+    

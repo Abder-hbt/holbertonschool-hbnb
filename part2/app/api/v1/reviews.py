@@ -21,16 +21,41 @@ class ReviewList(Resource):
         review_data = api.payload
         if not review_data:
             return {'message': 'No input data'}, 400
-        
-        new_review = HBnBFacade().create_review(review_data)
-        return {'message': 'Review successfully created', 'id': new_review.id}, 201
+
+        # Utiliser la même instance de HBnBFacade
+        facade = HBnBFacade()
+
+        try:
+            new_review = facade.create_review(review_data)
+
+            # Construire la réponse avec tous les détails de la review
+            response_data = {
+                'message': 'Review successfully created',
+                'id': new_review.id,
+                'text': new_review.text,
+                'rating': new_review.rating,
+                'user_id': new_review.user.id,
+                'place_id': new_review.place.id
+            }
+            return response_data, 201
+        except ValueError as e:
+            return {'error': str(e)}, 400
         
 
     @api.response(200, 'List of reviews retrieved successfully')
     def get(self):
         """Retrieve a list of all reviews"""
-        reviews = HBnBFacade().get_all_reviews()
-        return [{'id': review.id, 'text': review.text, 'rating': review.rating, 'user_id': review.user_id, 'place_id': review.place_id} for review in reviews], 200
+        facade = HBnBFacade()
+        reviews = facade.get_all_reviews()
+
+        # Construire la réponse avec les détails de chaque review
+        return [{
+            'id': review.id,
+            'text': review.text,
+            'rating': review.rating,
+            'user_id': review.user.id,
+            'place_id': review.place.id
+        } for review in reviews], 200
         
 
 @api.route('/<review_id>')
@@ -39,11 +64,25 @@ class ReviewResource(Resource):
     @api.response(404, 'Review not found')
     def get(self, review_id):
         """Get review details by ID"""
-        review = HBnBFacade().get_review(review_id)
-        if not review:
-            return {'error': 'Review not found'}, 404
-        return {'id': review.id, 'text': review.text, 'rating': review.rating, 'user_id': review.user_id, 'place_id': review.place_id}, 200
-        
+        facade = HBnBFacade()
+
+        try:
+            review = facade.get_review(review_id)
+
+            if review is None:
+                return {"error": "Review not found"}, 404
+
+            # Convertir l'objet Review en dictionnaire pour la sérialisation JSON
+            review_data = {
+                'id': review.id,
+                'text': review.text,
+                'rating': review.rating,
+                'user_id': review.user.id,
+                'place_id': review.place.id
+            }
+            return review_data, 200
+        except ValueError as e:
+            return {'error': str(e)}, 400   
 
     @api.expect(review_model, validate=True)
     @api.response(200, 'Review updated successfully')
@@ -53,13 +92,24 @@ class ReviewResource(Resource):
         """Update a review's information"""
         review_data = api.payload
         if not review_data:
-            return {'error': 'No input data'}, 400
-        
-        updated_review = HBnBFacade().update_review(review_id, review_data)
-        if not updated_review:
-            return {'error': 'Review not found'}, 404
-        return {'message': 'Review updated successfully'}, 200
-        
+            return {'message': 'No input data'}, 404
+
+        facade = HBnBFacade()
+
+        try:
+            updated_review = facade.update_review(review_id, review_data)
+            # Construire la réponse avec tous les détails de la review mise à jour
+            response_data = {
+                'message': 'Review successfully updated',
+                'id': updated_review.id,
+                'text': updated_review.text,
+                'rating': updated_review.rating,
+                'user_id': updated_review.user.id,
+                'place_id': updated_review.place.id
+            }
+            return response_data, 200
+        except ValueError as e:
+            return {'error': str(e)}, 400      
 
     @api.response(200, 'Review deleted successfully')
     @api.response(404, 'Review not found')
@@ -77,8 +127,20 @@ class PlaceReviewList(Resource):
     @api.response(404, 'Place not found')
     def get(self, place_id):
         """Get all reviews for a specific place"""
-        reviews = HBnBFacade().get_reviews_by_place(place_id)
+        facade = HBnBFacade()
+        reviews = facade.get_reviews_by_place(place_id)
+
         if not reviews:
-            return {'error': 'Place not found'}, 404
-        return [{'id': review.id, 'text': review.text, 'rating': review.rating, 'user_id': review.user_id, 'place_id': review.place_id} for review in reviews], 200
-        
+            return {'error': 'Reviews not found for this place'}, 404
+
+        # Construire la réponse avec les détails de chaque review
+        return [
+            {
+                'id': review.id,
+                'text': review.text,
+                'rating': review.rating,
+                'user_id': review.user.id,  # Utiliser l'ID de l'utilisateur
+                'place_id': review.place.id  # Utiliser l'ID du lieu
+            }
+            for review in reviews
+        ], 200    

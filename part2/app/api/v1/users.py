@@ -19,15 +19,34 @@ class UserList(Resource):
     @api.response(400, 'Invalid input data')
     def post(self):
         """Register a new user"""
-        user_data = api.payload
+        try:
+            user_data = api.payload
+            existing_user = facade.get_user_by_email(user_data['email'])
+            if existing_user:
+                return {'error': 'Email already registered'}, 400
 
-        # Simulate email uniqueness check (to be replaced by real validation with persistence)
-        existing_user = facade.get_user_by_email(user_data['email'])
-        if existing_user:
-            return {'error': 'Email already registered'}, 400
+            new_user = facade.create_user(user_data)
+            return {'id': new_user.id, 'first_name': new_user.first_name, 'last_name': new_user.last_name, 'email': new_user.email}, 201
+        except ValueError as e:
+            return {'error': str(e)}, 400
+        except Exception as e:
+            return {'error': 'Server error: ' + str(e)}, 500
+    
+    def get(self):
+        """Retrieve a list of all users"""
+        facade = HBnBFacade()
+        users = facade.get_all_users()
 
-        new_user = facade.create_user(user_data)
-        return {'id': new_user.id, 'first_name': new_user.first_name, 'last_name': new_user.last_name, 'email': new_user.email}, 201
+        # Construire la réponse avec les détails de chaque utilisateur
+        return [
+            {
+                'id': user.id,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'email': user.email
+            }
+            for user in users
+        ], 200
 
 @api.route('/<user_id>')
 class UserResource(Resource):
