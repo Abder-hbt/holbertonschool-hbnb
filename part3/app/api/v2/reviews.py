@@ -1,0 +1,174 @@
+from flask_restx import Namespace, Resource, fields
+from app.services.facade import HBnBFacade
+facade = HBnBFacade()
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
+api = Namespace('reviews', description='Review operations')
+
+# Define the review model for input validation and documentation
+review_model = api.model('Review', {
+    'text': fields.String(required=True, description='Text of the review'),
+    'rating': fields.Integer(required=True, description='Rating of the place (1-5)'),
+    'user_id': fields.String(required=True, description='ID of the user'),
+    'place_id': fields.String(required=True, description='ID of the place')
+})
+
+@api.route('/')
+class ReviewList(Resource):
+    @api.expect(review_model)
+    @api.response(201, 'Review successfully created')
+    @api.response(400, 'Invalid input data')
+    def post(self):
+        """Register a new review"""
+        current_user = get_jwt_identity()
+        review_data = api.payload
+        if not review_data:
+            return {'message': 'No input data'}, 400
+
+        # Check if user is owner of place
+        place = facade.get_place(review_data['place_id'])
+        if not place:
+            return 'Error Not Found', 404
+
+        # Owner is not allowed to review their own place
+        if place.owner_id == current_user.get("id"):
+            return 'Vous ne pouvez pas évaluer votre propre lieu', 400
+
+        # Check if user already left a review
+        review = facade.get_reviews_by_place(review_data['place_id'])
+        for review in review:
+            if review.user_id == current_user.get("id"):
+                return 'Vous avez déjà évalué ce lieu', 400
+    
+        try:
+            new_review = facade.create_review(review_data)
+
+            # Construire la réponse avec tous les détails de la review
+            response_data = {
+                'message': 'Review successfully created',
+                'id': new_review.id,
+                'text': new_review.text,
+                'rating': new_review.rating,
+                'user_id': new_review.user.id,
+                'place_id': new_review.place.id
+            }
+            return response_data, 201
+        except ValueError as e:
+            return {'error': str(e)}, 400
+        
+
+    @api.response(200, 'List of reviews retrieved successfully')
+    def get(self):
+        """Retrieve a list of all reviews"""
+        facade = HBnBFacade()
+        reviews = facade.get_all_reviews()
+
+        # Construire la réponse avec les détails de chaque review
+        return [{
+            'id': review.id,
+            'text': review.text,
+            'rating': review.rating,
+            'user_id': review.user.id,
+            'place_id': review.place.id
+        } for review in reviews], 200
+        
+
+@api.route('/<review_id>')
+class ReviewResource(Resource):
+    @api.response(200, 'Review details retrieved successfully')
+    @api.response(404, 'Review not found')
+    def get(self, review_id):
+        """Get review details by ID"""
+        facade = HBnBFacade()
+
+        try:
+            review = facade.get_review(review_id)
+
+            if review is None:
+                return {"error": "Review not found"}, 404
+
+            # Convertir l'objet Review en dictionnaire pour la sérialisation JSON
+            review_data = {
+                'id': review.id,
+                'text': review.text,
+                'rating': review.rating,
+                'user_id': review.user.id,
+                'place_id': review.place.id
+            }
+            return review_data, 200
+        except ValueError as e:
+            return {'error': str(e)}, 400   
+
+    @jwt_required()
+    @api.expect(review_model, validate=True)
+    @api.response(200, 'Review updated successfully')
+    @api.response(404, 'Review not found')
+    @api.response(400, 'Invalid input data')
+    def put(self, review_id):
+        """Update a review's information"""
+        review_data = api.payload
+        current_user = get_jwt_identity()
+
+        if not review_data:
+            return {'message': 'No input data'}, 404
+
+        review = facade.get_review(review_id)
+        if review.user_id != current_user.get("id"):
+            return {'error': 'Unauthorized action.'}, 403
+
+        try:
+            updated_review = facade.update_review(review_id, review_data)
+            # Construire la réponse avec tous les détails de la review mise à jour
+            response_data = {
+                'message': 'Review successfully updated',
+                'id': updated_review.id,
+                'text': updated_review.text,
+                'rating': updated_review.rating,
+                'user_id': updated_review.user.id,
+                'place_id': updated_review.place.id
+            }
+            return response_data, 200
+        except ValueError as e:
+            return {'error': str(e)}, 400      
+    
+    @jwt_required()
+    @api.response(200, 'Review deleted successfully')
+    @api.response(404, 'Review not found')
+    def delete(self, review_id):
+        """Delete a review"""
+
+        current_user = get_jwt_identity()
+        review = facade.get_review(review_id)
+        
+        if review.user_id != current_user.get("id"):
+            return {'error': 'Unauthorized action.'}, 403
+
+        deleted_review = HBnBFacade().delete_review(review_id)
+        if not deleted_review:
+            return {'error': 'Review not found'}, 404
+        return {'message': 'Review deleted successfully'}, 200
+        
+
+@api.route('/places/<place_id>/reviews')
+class PlaceReviewList(Resource):
+    @api.response(200, 'List of reviews for the place retrieved successfully')
+    @api.response(404, 'Place not found')
+    def get(self, place_id):
+        """Get all reviews for a specific place"""
+        facade = HBnBFacade()
+        reviews = facade.get_reviews_by_place(place_id)
+
+        if not reviews:
+            return {'error': 'Reviews not found for this place'}, 404
+
+        # Construire la réponse avec les détails de chaque review
+        return [
+            {
+                'id': review.id,
+                'text': review.text,
+                'rating': review.rating,
+                'user_id': review.user.id,  # Utiliser l'ID de l'utilisateur
+                'place_id': review.place.id  # Utiliser l'ID du lieu
+            }
+            for review in reviews
+        ], 200    
