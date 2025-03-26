@@ -10,3 +10,5 @@ chmod 777 run.py
 python -m pip show flask
 flask-bcrypt
 flask-jwt-extended
+sqlalchemy
+flask-sqlalchemy

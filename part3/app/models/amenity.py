@@ -3,8 +3,14 @@
 
 from app.models.base_model import BaseModel
 import datetime
+from app import db, bcrypt
+import uuid
 
 class Amenity(BaseModel):
+
+    __tablename__ = 'amenitie' 
+
+    name = db.Column(db.String(50), nullable=False)
 
     def __init__(self, name):
         # Initialise l'instance avec un nom validé

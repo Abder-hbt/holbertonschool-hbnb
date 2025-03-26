@@ -17,11 +17,17 @@
 # - update(data) : Met à jour les attributs de l'objet à partir d'un dictionnaire fourni.
 
 import uuid
+from app import db
 from datetime import datetime
 
 class BaseModel:
     # Classe de base fournissant un identifiant unique et des timestamps
-    
+    __abstract__ = True  # This ensures SQLAlchemy does not create a table for BaseModel
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
     def __init__(self):
         # Initialise un nouvel objet avec un ID unique et des timestamps
         self.id = str(uuid.uuid4())  # Génère un identifiant unique

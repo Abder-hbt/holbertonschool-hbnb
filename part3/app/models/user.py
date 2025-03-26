@@ -1,9 +1,18 @@
 import re
 from  app.models.base_model import BaseModel
-import bcrypt
+from app import db, bcrypt
+
+
 
 class User(BaseModel):
     # Représente un utilisateur de l'application
+    __tablename__ = 'user'
+
+    first_name = db.Column(db.String(50), nullable=False)
+    last_name = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String(120), nullable=False, unique=True)
+    password = db.Column(db.String(128), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
     
     used_emails = set()  # Ensemble pour stocker les emails déjà utilisés 
 

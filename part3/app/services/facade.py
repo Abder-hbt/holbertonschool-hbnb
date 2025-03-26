@@ -3,6 +3,10 @@ from app.models.user import User
 from app.models.amenity import Amenity
 from app.models.place import Place
 from app.models.review import Review
+from app.services.repositories.user_repository import UserRepository
+from app.services.repositories.place_repository import PlaceRepository
+from app.services.repositories.review_repository import ReviewRepository
+from app.services.repositories.amenity_repository import AmenityRepository
 
 class HBnBFacade:
     _instance = None
@@ -16,10 +20,10 @@ class HBnBFacade:
         # Initialisation des repositories
         if not hasattr(self, 'initialized'):
             # Initialisation des dépôts distincts
-            self.user_repo = SQLAlchemyRepository(User)  # Switched to SQLAlchemyRepository
-            self.place_repos = SQLAlchemyRepository(Place)
-            self.review_repo = SQLAlchemyRepository(Review)
-            self.amenity_repo = SQLAlchemyRepository(Amenity)
+            self.user_repo = UserRepository  # Switched to SQLAlchemyRepository
+            self.place_repos = PlaceRepository
+            self.review_repo = ReviewRepository
+            self.amenity_repo = AmenityRepository
 
     # User
     def create_user(self, user_data):

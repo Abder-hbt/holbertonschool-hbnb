@@ -1,10 +1,17 @@
 from app.models.base_model import BaseModel
 import datetime
-
+from app import db
 from typing import TYPE_CHECKING
 
 class Review(BaseModel):
     # Représente un avis sur un lieu
+
+    __tablename__ = 'review'
+
+    text = db.Column(db.String, nullable=False)
+    rating = db.Column(db.Integer, nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey('user.id'), nullable=False)
+    place_id = db.Column(db.Integer, db.ForeignKey('place.id'), nullable=False)
 
     def __init__(self, text, rating, place, user):
         # Initialise un nouvel objet Review avec des validations

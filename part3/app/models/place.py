@@ -1,9 +1,19 @@
 import requests
 from app.models.base_model import BaseModel
 from app.models.user import User
+from app import db, bcrypt
 
 class Place(BaseModel):
     """Représente un lieu dans l'application."""
+    __tablenae__ = 'place'
+
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String, nullable=True)
+    price = db.Column(db.Float, nullable=False)
+    address = db.Column(db.String, nullable=False)
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
+    owner_id = db.Column(db.String(36), db.ForeignKey('user.id'), nullable=False)    
 
     def __init__(self, title: str, description: str, price: float, address: str, owner: User, amenities: str):
         """Initialise un nouvel objet Place avec des validations et du géocodage."""
